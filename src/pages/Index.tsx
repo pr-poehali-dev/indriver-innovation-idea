@@ -2,6 +2,15 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { scoreCandidate, type CandidateForm, type ScoredCandidate } from "@/lib/aiScoring";
 
+type CommissionStatus = "pending" | "accepted" | "rejected" | "review";
+
+const COMMISSION_STATUS_META: Record<CommissionStatus, { label: string; color: string; bg: string; icon: string }> = {
+  pending:  { label: "На рассмотрении", color: "#94a3b8", bg: "rgba(148,163,184,0.1)",  icon: "Clock" },
+  review:   { label: "Собеседование",   color: "#38bdf8", bg: "rgba(56,189,248,0.12)",  icon: "CalendarCheck" },
+  accepted: { label: "Принят",          color: "#00e896", bg: "rgba(0,232,150,0.12)",   icon: "CheckCircle2" },
+  rejected: { label: "Отклонён",        color: "#f87171", bg: "rgba(248,113,113,0.12)", icon: "XCircle" },
+};
+
 const DEMO_CANDIDATES: ScoredCandidate[] = [
   {
     id: "d1", name: "Айгерим Бекова", age: 29, position: "Senior Product Manager",
@@ -124,21 +133,37 @@ const emptyForm: Omit<CandidateForm, "id" | "submittedAt" | "avatar"> = {
   achievements: "", languages: "",
 };
 
-type Tab = "apply" | "rating" | "shortlist";
+type Tab = "apply" | "rating" | "shortlist" | "commission";
 
 export default function Index() {
   const [tab, setTab] = useState<Tab>("rating");
   const [candidates, setCandidates] = useState<ScoredCandidate[]>(DEMO_CANDIDATES);
+  const [commissionStatuses, setCommissionStatuses] = useState<Record<string, CommissionStatus>>({
+    d1: "accepted", d2: "review", d3: "review", d4: "pending", d5: "rejected",
+  });
   const [form, setForm] = useState({ ...emptyForm });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<ScoredCandidate | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"score" | "experience">("score");
+  const [commissionNote, setCommissionNote] = useState<Record<string, string>>({});
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+
+  const setStatus = (id: string, status: CommissionStatus) => {
+    setCommissionStatuses(prev => ({ ...prev, [id]: status }));
+  };
 
   const sorted = [...candidates].sort((a, b) =>
     sortBy === "score" ? b.score - a.score : b.experience - a.experience
   );
   const shortlist = sorted.filter(c => c.shortlisted);
+
+  const commissionStats = {
+    accepted: Object.values(commissionStatuses).filter(s => s === "accepted").length,
+    review:   Object.values(commissionStatuses).filter(s => s === "review").length,
+    rejected: Object.values(commissionStatuses).filter(s => s === "rejected").length,
+    pending:  Object.values(commissionStatuses).filter(s => s === "pending").length,
+  };
 
   const handleSubmit = () => {
     if (!form.name || !form.position || !form.motivation) return;
@@ -151,6 +176,7 @@ export default function Index() {
         avatar: form.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
       });
       setCandidates(prev => [...prev, newCandidate]);
+      setCommissionStatuses(prev => ({ ...prev, [newCandidate.id]: "pending" }));
       setSubmitted(newCandidate);
       setSubmitting(false);
       setForm({ ...emptyForm });
@@ -182,9 +208,10 @@ export default function Index() {
           {/* Tabs */}
           <div className="flex items-center gap-1 glass rounded-xl p-1">
             {([
-              { key: "apply", icon: "FilePlus", label: "Подать заявку" },
-              { key: "rating", icon: "BarChart2", label: "Рейтинг" },
-              { key: "shortlist", icon: "Star", label: `Shortlist (${stats.shortlisted})` },
+              { key: "apply",      icon: "FilePlus",   label: "Подать заявку" },
+              { key: "rating",     icon: "BarChart2",  label: "Рейтинг" },
+              { key: "shortlist",  icon: "Star",       label: `Shortlist (${stats.shortlisted})` },
+              { key: "commission", icon: "Users",      label: "Комиссия" },
             ] as const).map(t => (
               <button
                 key={t.key}
@@ -476,13 +503,27 @@ export default function Index() {
                             </div>
                           ) : null)}
                         </div>
-                        <div className="mt-4 flex gap-2">
-                          <button className="flex-1 py-2 rounded-xl text-xs font-semibold" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}>
-                            Пригласить на интервью
-                          </button>
-                          <button className="px-3 py-2 rounded-xl text-xs glass text-white/50 hover:text-white transition-colors">
-                            <Icon name="X" size={13} />
-                          </button>
+                        <div className="mt-4 space-y-2">
+                          <div className="text-white/30 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <Icon name="Shield" size={11} /> Решение комиссии
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {(Object.entries(COMMISSION_STATUS_META) as [CommissionStatus, typeof COMMISSION_STATUS_META[CommissionStatus]][]).map(([key, meta]) => (
+                              <button
+                                key={key}
+                                onClick={e => { e.stopPropagation(); setStatus(c.id, key); }}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all"
+                                style={{
+                                  background: commissionStatuses[c.id] === key ? meta.bg : "rgba(255,255,255,0.04)",
+                                  color: commissionStatuses[c.id] === key ? meta.color : "rgba(255,255,255,0.35)",
+                                  border: `1px solid ${commissionStatuses[c.id] === key ? meta.color + "40" : "rgba(255,255,255,0.06)"}`,
+                                }}
+                              >
+                                <Icon name={meta.icon} size={11} />
+                                {meta.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -533,12 +574,28 @@ export default function Index() {
                         {c.tags.map(t => <span key={t} className="px-2 py-0.5 rounded-md text-xs text-white/40 bg-white/5">{t}</span>)}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-3xl font-bold font-mono-custom" style={{ color: getScoreColor(c.score) }}>{c.score}</div>
-                      <div className="text-white/25 text-xs mb-3">баллов</div>
-                      <button className="px-4 py-2 rounded-xl text-xs font-semibold block" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}>
-                        Интервью →
-                      </button>
+                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                      <div>
+                        <div className="text-3xl font-bold font-mono-custom" style={{ color: getScoreColor(c.score) }}>{c.score}</div>
+                        <div className="text-white/25 text-xs">баллов</div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {(Object.entries(COMMISSION_STATUS_META) as [CommissionStatus, typeof COMMISSION_STATUS_META[CommissionStatus]][]).map(([key, meta]) => (
+                          <button
+                            key={key}
+                            onClick={() => setStatus(c.id, key)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all"
+                            style={{
+                              background: commissionStatuses[c.id] === key ? meta.bg : "rgba(255,255,255,0.03)",
+                              color: commissionStatuses[c.id] === key ? meta.color : "rgba(255,255,255,0.3)",
+                              border: `1px solid ${commissionStatuses[c.id] === key ? meta.color + "35" : "transparent"}`,
+                            }}
+                          >
+                            <Icon name={meta.icon} size={10} />
+                            {meta.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -564,6 +621,125 @@ export default function Index() {
                 <div className="text-sm">Нет кандидатов в шортлисте</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── TAB: COMMISSION ── */}
+        {tab === "commission" && (
+          <div className="animate-fade-in">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-white mb-1">Панель комиссии</h1>
+              <p className="text-white/40 text-sm">Управляйте статусами кандидатов · AI рекомендует, вы решаете</p>
+            </div>
+
+            {/* Status summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {(Object.entries(COMMISSION_STATUS_META) as [CommissionStatus, typeof COMMISSION_STATUS_META[CommissionStatus]][]).map(([key, meta]) => (
+                <div key={key} className="glass rounded-2xl p-4 text-center" style={{ border: `1px solid ${meta.color}20` }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: meta.bg }}>
+                    <Icon name={meta.icon} size={16} style={{ color: meta.color }} />
+                  </div>
+                  <div className="text-2xl font-bold font-mono-custom mb-0.5" style={{ color: meta.color }}>
+                    {commissionStats[key]}
+                  </div>
+                  <div className="text-white/40 text-xs">{meta.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Candidate list with status controls */}
+            <div className="space-y-3">
+              {sorted.map(c => {
+                const currentStatus = commissionStatuses[c.id] || "pending";
+                const currentMeta = COMMISSION_STATUS_META[currentStatus];
+                return (
+                  <div key={c.id} className="glass rounded-2xl p-5" style={{ border: `1px solid ${currentMeta.color}18` }}>
+                    <div className="flex items-start gap-4">
+                      {/* Avatar + score */}
+                      <div className="shrink-0 text-center">
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold mb-1"
+                          style={{ background: `${getScoreColor(c.score)}18`, color: getScoreColor(c.score), border: `1px solid ${getScoreColor(c.score)}30` }}>
+                          {c.avatar}
+                        </div>
+                        <div className="font-mono-custom text-sm font-bold" style={{ color: getScoreColor(c.score) }}>{c.score}</div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-white font-semibold">{c.name}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBg(c.status)}`}>{getStatusLabel(c.status)}</span>
+                          {c.shortlisted && <span className="text-xs font-medium" style={{ color: "#00e896" }}>★ Shortlist</span>}
+                        </div>
+                        <div className="text-white/40 text-xs mb-2">{c.position} · {c.location} · {c.experience} лет</div>
+                        <p className="text-white/45 text-xs leading-relaxed italic mb-3">"{c.aiSummary}"</p>
+
+                        {/* Note field */}
+                        <div>
+                          {editingNote === c.id ? (
+                            <div className="flex gap-2">
+                              <input
+                                autoFocus
+                                value={commissionNote[c.id] || ""}
+                                onChange={e => setCommissionNote(prev => ({ ...prev, [c.id]: e.target.value }))}
+                                onBlur={() => setEditingNote(null)}
+                                onKeyDown={e => e.key === "Enter" && setEditingNote(null)}
+                                placeholder="Комментарий комиссии..."
+                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-white/25 outline-none"
+                              />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingNote(c.id)}
+                              className="flex items-center gap-1.5 text-xs transition-colors"
+                              style={{ color: commissionNote[c.id] ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}
+                            >
+                              <Icon name="MessageSquarePlus" size={12} />
+                              {commissionNote[c.id] || "Добавить комментарий..."}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status buttons */}
+                      <div className="shrink-0 flex flex-col gap-1.5">
+                        {(Object.entries(COMMISSION_STATUS_META) as [CommissionStatus, typeof COMMISSION_STATUS_META[CommissionStatus]][]).map(([key, meta]) => (
+                          <button
+                            key={key}
+                            onClick={() => setStatus(c.id, key)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all w-40 justify-start"
+                            style={{
+                              background: currentStatus === key ? meta.bg : "rgba(255,255,255,0.03)",
+                              color: currentStatus === key ? meta.color : "rgba(255,255,255,0.3)",
+                              border: `1px solid ${currentStatus === key ? meta.color + "40" : "rgba(255,255,255,0.05)"}`,
+                            }}
+                          >
+                            <Icon name={meta.icon} size={12} />
+                            {meta.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Export hint */}
+            <div className="mt-6 glass rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(56,189,248,0.1)" }}>
+                  <Icon name="Download" size={14} style={{ color: "#38bdf8" }} />
+                </div>
+                <div>
+                  <div className="text-white text-sm font-medium">Экспорт решений</div>
+                  <div className="text-white/35 text-xs">Принято: {commissionStats.accepted} · На интервью: {commissionStats.review} · Отклонено: {commissionStats.rejected}</div>
+                </div>
+              </div>
+              <button className="px-4 py-2 rounded-xl text-xs font-medium glass text-white/50 hover:text-white transition-colors">
+                Скачать отчёт
+              </button>
+            </div>
           </div>
         )}
 
