@@ -1,460 +1,582 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { scoreCandidate, type CandidateForm, type ScoredCandidate } from "@/lib/aiScoring";
 
-const candidates = [
+const DEMO_CANDIDATES: ScoredCandidate[] = [
   {
-    id: 1,
-    name: "Айгерим Бекова",
-    position: "Senior Product Manager",
-    score: 94,
-    avatar: "АБ",
-    location: "Алматы",
-    experience: 7,
-    education: "MBA, KIMEP University",
-    status: "top",
+    id: "d1", name: "Айгерим Бекова", age: 29, position: "Senior Product Manager",
+    location: "Алматы", experience: 7, education: "MBA, KIMEP University",
+    educationLevel: "master", skills: "Product Management, Agile, Data Analysis, B2C",
+    previousCompanies: "Kaspi.kz, Choco", employerReview: "Исключительный специалист. Вывела 3 продукта на рынок. Рекомендую без сомнений.",
+    employerRating: 5, accidents: 0, motivation: "Стремлюсь к лидерству в продуктовой разработке. Хочу развивать инновационные решения для реального бизнеса. Моя цель — создавать продукты с реальным влиянием на рынок.",
+    achievements: "Запустила 3 продукта, вырастила команду с 5 до 20 человек", languages: "Казахский, Русский, English",
+    submittedAt: "2026-03-10", avatar: "АБ",
+    score: 94, status: "top", shortlisted: true, tags: ["Product", "Agile", "Data", "Senior"],
+    aiSummary: "Выдающийся кандидат с высоким потенциалом. Обширный опыт 7+ лет → максимальный балл. Настоятельно рекомендуется к интервью.",
     scoreBreakdown: [
-      { label: "Опыт работы", value: 30, max: 30, sign: "+" },
-      { label: "Рекомендации", value: 25, max: 25, sign: "+" },
-      { label: "Образование", value: 20, max: 20, sign: "+" },
-      { label: "Мотивация", value: 15, max: 20, sign: "+" },
-      { label: "Активность", value: 4, max: 5, sign: "+" },
+      { label: "Опыт работы", value: 30, max: 30, sign: "+", reason: "Обширный опыт 7+ лет → максимальный балл" },
+      { label: "Образование", value: 18, max: 20, sign: "+", reason: "Магистратура — отличная академическая подготовка" },
+      { label: "Мотивация", value: 20, max: 20, sign: "+", reason: "Сильная, конкретная мотивация с чёткими целями" },
+      { label: "Отзывы и рейтинг", value: 22, max: 25, sign: "+", reason: "Высокий рейтинг 5/5, положительные отзывы" },
+      { label: "Навыки", value: 4, max: 5, sign: "+", reason: "Сильный набор востребованных навыков" },
     ],
-    reviews: [
-      { company: "Kaspi.kz", author: "Дмитрий Ковалёв", role: "CTO", text: "Исключительный специалист. Вывела 3 продукта на рынок.", rating: 5 },
-      { company: "Choco", author: "Алия Нурланова", role: "CEO", text: "Отличные навыки работы с командой и аналитика.", rating: 5 },
-    ],
-    tags: ["Product", "Agile", "Data", "B2C"],
   },
   {
-    id: 2,
-    name: "Тимур Джаксыбеков",
-    position: "Full-Stack Engineer",
-    score: 88,
-    avatar: "ТД",
-    location: "Нур-Султан",
-    experience: 5,
-    education: "CS, Назарбаев Университет",
-    status: "high",
+    id: "d2", name: "Тимур Джаксыбеков", age: 26, position: "Full-Stack Engineer",
+    location: "Астана", experience: 5, education: "CS, Назарбаев Университет",
+    educationLevel: "bachelor", skills: "React, Python, AWS, PostgreSQL, Docker",
+    previousCompanies: "Beeline KZ", employerReview: "Быстро учится, пишет чистый код. Рекомендую.",
+    employerRating: 5, accidents: 0, motivation: "Хочу развиваться как инженер и вносить вклад в технологические продукты, которые меняют жизни. Стремлюсь к росту и инновациям.",
+    achievements: "Разработал платёжную систему, обрабатывающую 100K транзакций/день", languages: "Казахский, Русский, English",
+    submittedAt: "2026-03-12", avatar: "ТД",
+    score: 88, status: "high", shortlisted: true, tags: ["Backend", "Frontend", "Data", "Middle"],
+    aiSummary: "Сильный кандидат, соответствует большинству критериев. Рекомендуется к рассмотрению.",
     scoreBreakdown: [
-      { label: "Опыт работы", value: 25, max: 30, sign: "+" },
-      { label: "Технические навыки", value: 24, max: 25, sign: "+" },
-      { label: "Образование", value: 20, max: 20, sign: "+" },
-      { label: "Мотивация", value: 12, max: 20, sign: "+" },
-      { label: "Активность", value: 7, max: 5, sign: "+" },
+      { label: "Опыт работы", value: 25, max: 30, sign: "+", reason: "Хороший опыт 5–7 лет" },
+      { label: "Образование", value: 14, max: 20, sign: "+", reason: "Бакалавриат — базовое высшее образование" },
+      { label: "Мотивация", value: 18, max: 20, sign: "+", reason: "Сильная, конкретная мотивация с чёткими целями" },
+      { label: "Отзывы и рейтинг", value: 25, max: 25, sign: "+", reason: "Высокий рейтинг 5/5, положительные отзывы" },
+      { label: "Навыки", value: 5, max: 5, sign: "+", reason: "Сильный набор востребованных навыков" },
     ],
-    reviews: [
-      { company: "Beeline KZ", author: "Сергей Матвеев", role: "Tech Lead", text: "Быстро учится, пишет чистый код. Рекомендую.", rating: 5 },
-    ],
-    tags: ["React", "Python", "AWS", "PostgreSQL"],
   },
   {
-    id: 3,
-    name: "Мадина Сейтова",
-    position: "UX/UI Designer",
-    score: 81,
-    avatar: "МС",
-    location: "Алматы",
-    experience: 4,
-    education: "Дизайн, Международная Академия Бизнеса",
-    status: "high",
+    id: "d3", name: "Мадина Сейтова", age: 27, position: "UX/UI Designer",
+    location: "Алматы", experience: 4, education: "Дизайн, МАБ",
+    educationLevel: "bachelor", skills: "Figma, UX Research, Motion, Design System",
+    previousCompanies: "inDriver, Kolesa.kz", employerReview: "Хороший дизайнер, иногда пропускала дедлайны.",
+    employerRating: 4, accidents: 0, motivation: "Создавать красивые и удобные продукты. Хочу работать в команде, где дизайн влияет на бизнес-результаты.",
+    achievements: "Разработала дизайн-систему для 50+ компонентов", languages: "Казахский, Русский",
+    submittedAt: "2026-03-14", avatar: "МС",
+    score: 75, status: "high", shortlisted: true, tags: ["Design", "Middle"],
+    aiSummary: "Сильный кандидат, соответствует большинству критериев. Рекомендуется к рассмотрению.",
     scoreBreakdown: [
-      { label: "Портфолио", value: 28, max: 30, sign: "+" },
-      { label: "Опыт работы", value: 20, max: 25, sign: "+" },
-      { label: "Образование", value: 16, max: 20, sign: "+" },
-      { label: "Мотивация", value: 14, max: 20, sign: "+" },
-      { label: "Активность", value: 3, max: 5, sign: "+" },
+      { label: "Опыт работы", value: 18, max: 30, sign: "+", reason: "Средний опыт 3–5 лет" },
+      { label: "Образование", value: 14, max: 20, sign: "+", reason: "Бакалавриат — базовое высшее образование" },
+      { label: "Мотивация", value: 14, max: 20, sign: "+", reason: "Мотивация есть, но недостаточно конкретики" },
+      { label: "Отзывы и рейтинг", value: 25, max: 25, sign: "+", reason: "Рейтинг 4/5, нейтральные отзывы" },
+      { label: "Навыки", value: 4, max: 5, sign: "+", reason: "Сильный набор востребованных навыков" },
     ],
-    reviews: [
-      { company: "inDriver", author: "Анна Петрова", role: "Head of Design", text: "Отличное чувство продукта, работает с данными.", rating: 4 },
-      { company: "Kolesa.kz", author: "Марат Дюсенов", role: "PM", text: "Хороший дизайнер, иногда пропускала дедлайны.", rating: 4 },
-    ],
-    tags: ["Figma", "UX Research", "Motion", "Design System"],
   },
   {
-    id: 4,
-    name: "Ерлан Омаров",
-    position: "Data Analyst",
-    score: 73,
-    avatar: "ЕО",
-    location: "Шымкент",
-    experience: 3,
-    education: "Экономика, КазНУ",
-    status: "mid",
+    id: "d4", name: "Ерлан Омаров", age: 24, position: "Data Analyst",
+    location: "Шымкент", experience: 3, education: "Экономика, КазНУ",
+    educationLevel: "bachelor", skills: "SQL, Python, Tableau, Excel",
+    previousCompanies: "ForteBank", employerReview: "Умеет работать с большими датасетами, SQL на уровне.",
+    employerRating: 4, accidents: 0, motivation: "Хочу попробовать себя в аналитике данных.",
+    achievements: "Автоматизировал отчётность, сэкономил 10 часов в неделю", languages: "Казахский, Русский",
+    submittedAt: "2026-03-15", avatar: "ЕО",
+    score: 65, status: "mid", shortlisted: false, tags: ["Data", "Middle"],
+    aiSummary: "Кандидат с умеренным потенциалом. Есть области для развития.",
     scoreBreakdown: [
-      { label: "Технические навыки", value: 22, max: 30, sign: "+" },
-      { label: "Опыт работы", value: 18, max: 25, sign: "+" },
-      { label: "Образование", value: 14, max: 20, sign: "+" },
-      { label: "Мотивация", value: 10, max: 20, sign: "-" },
-      { label: "Рекомендации", value: 9, max: 5, sign: "+" },
+      { label: "Опыт работы", value: 18, max: 30, sign: "+", reason: "Средний опыт 3–5 лет" },
+      { label: "Образование", value: 14, max: 20, sign: "+", reason: "Бакалавриат — базовое высшее образование" },
+      { label: "Мотивация", value: 7, max: 20, sign: "-", reason: "Слабая мотивация — мало деталей" },
+      { label: "Отзывы и рейтинг", value: 22, max: 25, sign: "+", reason: "Рейтинг 4/5, нейтральные отзывы" },
+      { label: "Навыки", value: 4, max: 5, sign: "+", reason: "Сильный набор востребованных навыков" },
     ],
-    reviews: [
-      { company: "ForteBank", author: "Жанар Сабирова", role: "Data Lead", text: "Умеет работать с большими датасетами, SQL на уровне.", rating: 4 },
-    ],
-    tags: ["SQL", "Python", "Tableau", "Excel"],
   },
   {
-    id: 5,
-    name: "Зарина Ахметова",
-    position: "Marketing Manager",
-    score: 65,
-    avatar: "ЗА",
-    location: "Алматы",
-    experience: 2,
-    education: "Маркетинг, Almaty Management University",
-    status: "mid",
+    id: "d5", name: "Нурлан Сагинтаев", age: 22, position: "Operations Manager",
+    location: "Павлодар", experience: 1, education: "Менеджмент, ЕНУ",
+    educationLevel: "bachelor", skills: "Excel, Logistics",
+    previousCompanies: "LocalShop", employerReview: "Исполнительный, но инициативы мало.",
+    employerRating: 3, accidents: 2, motivation: "Хочу денег и карьеры.",
+    achievements: "", languages: "Казахский, Русский",
+    submittedAt: "2026-03-16", avatar: "НС",
+    score: 38, status: "low", shortlisted: false, tags: ["Junior"],
+    aiSummary: "Кандидат пока не соответствует ключевым требованиям программы. Рекомендуется отклонить заявку.",
     scoreBreakdown: [
-      { label: "Опыт работы", value: 14, max: 30, sign: "+" },
-      { label: "Образование", value: 18, max: 20, sign: "+" },
-      { label: "Мотивация", value: 18, max: 20, sign: "+" },
-      { label: "Технические навыки", value: 10, max: 25, sign: "-" },
-      { label: "Рекомендации", value: 5, max: 5, sign: "+" },
+      { label: "Опыт работы", value: 10, max: 30, sign: "-", reason: "Минимальный опыт менее 3 лет" },
+      { label: "Образование", value: 14, max: 20, sign: "+", reason: "Бакалавриат — базовое высшее образование" },
+      { label: "Мотивация", value: 2, max: 20, sign: "-", reason: "Слабая мотивация — мало деталей" },
+      { label: "Отзывы и рейтинг", value: 2, max: 25, sign: "-", reason: "Низкий рейтинг или негативные отзывы, есть инциденты (2)" },
+      { label: "Навыки", value: 2, max: 5, sign: "-", reason: "Навыки требуют развития" },
     ],
-    reviews: [
-      { company: "OLX Kazakhstan", author: "Рустем Балтин", role: "Marketing Director", text: "Хороший потенциал, но пока не хватает опыта в digital.", rating: 3 },
-    ],
-    tags: ["SMM", "Content", "SEO", "Google Ads"],
-  },
-  {
-    id: 6,
-    name: "Нурлан Сагинтаев",
-    position: "Operations Manager",
-    score: 52,
-    avatar: "НС",
-    location: "Павлодар",
-    experience: 2,
-    education: "Менеджмент, ЕНУ им. Гумилёва",
-    status: "low",
-    scoreBreakdown: [
-      { label: "Опыт работы", value: 12, max: 30, sign: "-" },
-      { label: "Образование", value: 14, max: 20, sign: "+" },
-      { label: "Мотивация", value: 10, max: 20, sign: "-" },
-      { label: "Технические навыки", value: 8, max: 25, sign: "-" },
-      { label: "Рекомендации", value: 8, max: 5, sign: "+" },
-    ],
-    reviews: [
-      { company: "LocalShop", author: "Арман Исаев", role: "CEO", text: "Исполнительный, но инициативы мало.", rating: 3 },
-    ],
-    tags: ["Logistics", "Operations", "Excel"],
   },
 ];
 
 const getScoreColor = (score: number) => {
   if (score >= 85) return "#00e896";
   if (score >= 70) return "#fbbf24";
+  if (score >= 55) return "#fb923c";
   return "#f87171";
 };
 
-const getScoreLabel = (score: number) => {
-  if (score >= 85) return "Топ кандидат";
-  if (score >= 70) return "Высокий";
-  return "Средний";
+const getStatusLabel = (status: string) => {
+  if (status === "top") return "Топ";
+  if (status === "high") return "Высокий";
+  if (status === "mid") return "Средний";
+  return "Низкий";
 };
 
 const getStatusBg = (status: string) => {
-  if (status === "top") return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
-  if (status === "high") return "bg-blue-500/15 text-blue-400 border-blue-500/20";
-  if (status === "mid") return "bg-amber-500/15 text-amber-400 border-amber-500/20";
-  return "bg-red-500/15 text-red-400 border-red-500/20";
+  if (status === "top") return "bg-emerald-500/15 text-emerald-400 border-emerald-500/25";
+  if (status === "high") return "bg-blue-500/15 text-blue-400 border-blue-500/25";
+  if (status === "mid") return "bg-amber-500/15 text-amber-400 border-amber-500/25";
+  return "bg-red-500/15 text-red-400 border-red-500/25";
 };
 
-type SortKey = "score" | "experience" | "name";
-type FilterStatus = "all" | "top" | "high" | "mid" | "low";
+const emptyForm: Omit<CandidateForm, "id" | "submittedAt" | "avatar"> = {
+  name: "", age: 25, position: "", location: "",
+  experience: 0, education: "", educationLevel: "bachelor",
+  skills: "", previousCompanies: "", employerReview: "",
+  employerRating: 4, accidents: 0, motivation: "",
+  achievements: "", languages: "",
+};
+
+type Tab = "apply" | "rating" | "shortlist";
 
 export default function Index() {
-  const [sortBy, setSortBy] = useState<SortKey>("score");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [selectedCandidate, setSelectedCandidate] = useState<typeof candidates[0] | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [tab, setTab] = useState<Tab>("rating");
+  const [candidates, setCandidates] = useState<ScoredCandidate[]>(DEMO_CANDIDATES);
+  const [form, setForm] = useState({ ...emptyForm });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState<ScoredCandidate | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"score" | "experience">("score");
 
-  const filtered = candidates
-    .filter((c) => filterStatus === "all" || c.status === filterStatus)
-    .filter((c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.position.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "score") return b.score - a.score;
-      if (sortBy === "experience") return b.experience - a.experience;
-      return a.name.localeCompare(b.name);
-    });
+  const sorted = [...candidates].sort((a, b) =>
+    sortBy === "score" ? b.score - a.score : b.experience - a.experience
+  );
+  const shortlist = sorted.filter(c => c.shortlisted);
+
+  const handleSubmit = () => {
+    if (!form.name || !form.position || !form.motivation) return;
+    setSubmitting(true);
+    setTimeout(() => {
+      const newCandidate = scoreCandidate({
+        ...form,
+        id: Date.now().toString(),
+        submittedAt: new Date().toISOString().split("T")[0],
+        avatar: form.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase(),
+      });
+      setCandidates(prev => [...prev, newCandidate]);
+      setSubmitted(newCandidate);
+      setSubmitting(false);
+      setForm({ ...emptyForm });
+    }, 1800);
+  };
 
   const stats = {
     total: candidates.length,
-    top: candidates.filter((c) => c.score >= 85).length,
+    shortlisted: candidates.filter(c => c.shortlisted).length,
     avg: Math.round(candidates.reduce((s, c) => s + c.score, 0) / candidates.length),
-    reviewed: candidates.filter((c) => c.reviews.length > 0).length,
   };
 
   return (
-    <div className="min-h-screen grid-bg font-golos" style={{ background: "hsl(220, 20%, 6%)" }}>
+    <div className="min-h-screen font-golos" style={{ background: "hsl(220,20%,6%)", backgroundImage: "linear-gradient(rgba(0,232,150,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,232,150,0.02) 1px,transparent 1px)", backgroundSize: "40px 40px" }}>
+
       {/* Header */}
-      <header className="border-b border-white/5 sticky top-0 z-40" style={{ background: "rgba(13,15,20,0.85)", backdropFilter: "blur(20px)" }}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-white/5 sticky top-0 z-40" style={{ background: "rgba(10,12,18,0.9)", backdropFilter: "blur(24px)" }}>
+        <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #00e896, #00b4d8)" }}>
-              <Icon name="Zap" size={18} className="text-black" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)" }}>
+              <Icon name="Zap" size={17} className="text-black" />
             </div>
             <div>
-              <div className="text-sm font-bold tracking-wide text-white">inDriver</div>
-              <div className="text-xs text-white/40 font-mono-custom">AI Scoring System</div>
+              <div className="font-bold text-white text-sm tracking-wide">inDriver</div>
+              <div className="text-white/35 text-xs font-mono-custom">AI Candidate Selector</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium" style={{ background: "rgba(0,232,150,0.1)", color: "#00e896", border: "1px solid rgba(0,232,150,0.2)" }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow inline-block" />
-              AI активен
-            </div>
-            <button className="glass px-4 py-2 rounded-xl text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2">
-              <Icon name="Upload" size={14} />
-              Загрузить заявки
-            </button>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1 glass rounded-xl p-1">
+            {([
+              { key: "apply", icon: "FilePlus", label: "Подать заявку" },
+              { key: "rating", icon: "BarChart2", label: "Рейтинг" },
+              { key: "shortlist", icon: "Star", label: `Shortlist (${stats.shortlisted})` },
+            ] as const).map(t => (
+              <button
+                key={t.key}
+                onClick={() => { setTab(t.key); setSubmitted(null); }}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${tab === t.key ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"}`}
+              >
+                <Icon name={t.icon} size={13} />
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs" style={{ background: "rgba(0,232,150,0.1)", color: "#00e896", border: "1px solid rgba(0,232,150,0.2)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" style={{ animation: "pulse 2s infinite" }} />
+            AI активен
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Page Title */}
-        <div className="mb-8 animate-slide-up">
-          <h1 className="text-3xl font-bold text-white mb-1">
-            Рейтинг кандидатов
-          </h1>
-          <p className="text-white/40 text-sm">AI-анализ заявок · InVision U · Весна 2026</p>
-        </div>
+      <div className="max-w-6xl mx-auto px-5 py-8">
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Всего заявок", value: stats.total, icon: "Users", color: "#38bdf8" },
-            { label: "Топ кандидаты", value: stats.top, icon: "Star", color: "#00e896" },
-            { label: "Средний балл", value: stats.avg, icon: "BarChart2", color: "#a855f7" },
-            { label: "С отзывами", value: stats.reviewed, icon: "MessageSquare", color: "#fbbf24" },
-          ].map((stat, i) => (
-            <div
-              key={i}
-              className="glass rounded-2xl p-5 hover-lift"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${stat.color}18` }}>
-                  <Icon name={stat.icon} size={16} style={{ color: stat.color }} />
+        {/* ── TAB: APPLY ── */}
+        {tab === "apply" && (
+          <div className="animate-fade-in max-w-2xl mx-auto">
+            {submitted ? (
+              <div className="glass rounded-2xl p-8 text-center">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: `${getScoreColor(submitted.score)}20`, border: `2px solid ${getScoreColor(submitted.score)}50` }}>
+                  <span className="text-2xl font-bold font-mono-custom" style={{ color: getScoreColor(submitted.score) }}>{submitted.score}</span>
                 </div>
-                <span className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</span>
-              </div>
-              <div className="text-white/50 text-xs">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+                <div className="text-white font-bold text-xl mb-1">Заявка принята!</div>
+                <div className="text-white/40 text-sm mb-2">{submitted.name} · {getStatusLabel(submitted.status)}</div>
+                <p className="text-white/60 text-sm mb-6 leading-relaxed">{submitted.aiSummary}</p>
 
-        {/* Filters */}
-        <div className="glass rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 flex-1 min-w-48">
-            <Icon name="Search" size={15} className="text-white/30" />
-            <input
-              type="text"
-              placeholder="Поиск по имени или должности..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-sm text-white placeholder-white/30 outline-none w-full"
-            />
-          </div>
-          <div className="w-px h-5 bg-white/10" />
-          <div className="flex items-center gap-2 flex-wrap">
-            {(["all", "top", "high", "mid", "low"] as FilterStatus[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilterStatus(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  filterStatus === f
-                    ? "bg-white/10 text-white"
-                    : "text-white/40 hover:text-white/70"
-                }`}
-              >
-                {f === "all" ? "Все" : f === "top" ? "Топ" : f === "high" ? "Высокие" : f === "mid" ? "Средние" : "Низкие"}
-              </button>
-            ))}
-          </div>
-          <div className="w-px h-5 bg-white/10" />
-          <div className="flex items-center gap-2">
-            <Icon name="ArrowUpDown" size={14} className="text-white/30" />
-            {(["score", "experience", "name"] as SortKey[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => setSortBy(s)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  sortBy === s ? "text-neon-green" : "text-white/40 hover:text-white/70"
-                }`}
-              >
-                {s === "score" ? "Балл" : s === "experience" ? "Опыт" : "Имя"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Candidates List */}
-        <div className="space-y-3">
-          {filtered.map((candidate, index) => (
-            <div
-              key={candidate.id}
-              className="candidate-card glass rounded-2xl p-5 hover-lift cursor-pointer"
-              style={{ borderColor: selectedCandidate?.id === candidate.id ? "rgba(0,232,150,0.3)" : undefined }}
-              onClick={() => setSelectedCandidate(selectedCandidate?.id === candidate.id ? null : candidate)}
-            >
-              <div className="flex items-center gap-4">
-                {/* Rank */}
-                <div className="w-8 text-center font-mono-custom text-sm font-semibold text-white/20">
-                  #{index + 1}
-                </div>
-
-                {/* Avatar */}
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, ${getScoreColor(candidate.score)}30, ${getScoreColor(candidate.score)}10)`,
-                    border: `1px solid ${getScoreColor(candidate.score)}30`,
-                    color: getScoreColor(candidate.score),
-                  }}
-                >
-                  {candidate.avatar}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-white font-semibold text-sm">{candidate.name}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBg(candidate.status)}`}>
-                      {getScoreLabel(candidate.score)}
-                    </span>
-                  </div>
-                  <div className="text-white/40 text-xs truncate">{candidate.position} · {candidate.location} · {candidate.experience} лет опыта</div>
-                </div>
-
-                {/* Tags */}
-                <div className="hidden md:flex items-center gap-1.5 flex-wrap max-w-56">
-                  {candidate.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 rounded-md text-xs text-white/40 bg-white/5">
-                      {tag}
-                    </span>
+                <div className="space-y-2 mb-6 text-left">
+                  {submitted.scoreBreakdown.map(b => (
+                    <div key={b.label}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-white/50 text-xs">{b.label}</span>
+                        <span className="font-mono-custom text-xs" style={{ color: b.sign === "+" ? "#00e896" : "#f87171" }}>{b.sign}{b.value}/{b.max}</span>
+                      </div>
+                      <div className="h-1 rounded-full bg-white/8">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${(b.value / b.max) * 100}%`, background: b.sign === "+" ? "linear-gradient(90deg,#00e896,#00b4d8)" : "linear-gradient(90deg,#f87171,#fb923c)" }} />
+                      </div>
+                    </div>
                   ))}
                 </div>
 
-                {/* Score */}
-                <div className="flex items-center gap-4 shrink-0">
-                  <div className="hidden sm:flex items-center gap-1 text-white/30 text-xs">
-                    <Icon name="Star" size={12} className="text-amber-400" />
-                    {candidate.reviews.length} отз.
+                {submitted.shortlisted && (
+                  <div className="mb-5 py-3 px-4 rounded-xl text-sm font-medium" style={{ background: "rgba(0,232,150,0.1)", color: "#00e896", border: "1px solid rgba(0,232,150,0.2)" }}>
+                    🎉 Вы попали в Shortlist — комиссия рассмотрит вашу заявку
                   </div>
-                  <div className="text-right">
-                    <div
-                      className="text-2xl font-bold font-mono-custom leading-none"
-                      style={{ color: getScoreColor(candidate.score) }}
-                    >
-                      {candidate.score}
-                    </div>
-                    <div className="text-white/30 text-xs mt-0.5">баллов</div>
-                  </div>
-                  <Icon
-                    name={selectedCandidate?.id === candidate.id ? "ChevronUp" : "ChevronDown"}
-                    size={16}
-                    className="text-white/30"
-                  />
+                )}
+
+                <div className="flex gap-3">
+                  <button onClick={() => { setSubmitted(null); setTab("rating"); }} className="flex-1 py-2.5 rounded-xl text-sm font-semibold" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}>
+                    Посмотреть рейтинг
+                  </button>
+                  <button onClick={() => setSubmitted(null)} className="px-4 py-2.5 rounded-xl text-sm glass text-white/60 hover:text-white transition-colors">
+                    Новая заявка
+                  </button>
                 </div>
               </div>
+            ) : (
+              <>
+                <div className="mb-7">
+                  <h1 className="text-2xl font-bold text-white mb-1">Подать заявку</h1>
+                  <p className="text-white/40 text-sm">AI автоматически оценит вашу заявку по 5 критериям</p>
+                </div>
 
-              {/* Expanded Details */}
-              {selectedCandidate?.id === candidate.id && (
-                <div className="mt-5 pt-5 border-t border-white/5 grid md:grid-cols-2 gap-6 animate-fade-in">
-                  {/* Score Breakdown */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Icon name="BarChart2" size={14} className="text-neon-green" />
-                      <span className="text-white/60 text-xs font-medium uppercase tracking-wider">AI Объяснение оценки</span>
+                <div className="space-y-4">
+                  {/* Personal */}
+                  <div className="glass rounded-2xl p-5">
+                    <div className="text-white/50 text-xs font-medium uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Icon name="User" size={13} /> Личные данные
                     </div>
-                    <div className="space-y-3">
-                      {candidate.scoreBreakdown.map((item) => (
-                        <div key={item.label}>
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-white/60 text-xs">{item.label}</span>
-                            <span
-                              className="font-mono-custom text-xs font-medium"
-                              style={{ color: item.sign === "+" ? "#00e896" : "#f87171" }}
-                            >
-                              {item.sign}{item.value} / {item.max}
-                            </span>
-                          </div>
-                          <div className="score-bar">
-                            <div
-                              className="score-bar-fill"
-                              style={{
-                                width: `${(item.value / item.max) * 100}%`,
-                                background: item.sign === "+" ? "linear-gradient(90deg, #00e896, #00b4d8)" : "linear-gradient(90deg, #f87171, #fb923c)",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="text-white/40 text-xs mb-1 block">ФИО *</label>
+                        <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Иванов Иван Иванович" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Возраст</label>
+                        <input type="number" value={form.age} onChange={e => setForm(f => ({ ...f, age: +e.target.value }))} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Желаемая позиция *</label>
+                        <input value={form.position} onChange={e => setForm(f => ({ ...f, position: e.target.value }))} placeholder="Product Manager" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Город</label>
+                        <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Алматы" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Experience */}
+                  <div className="glass rounded-2xl p-5">
+                    <div className="text-white/50 text-xs font-medium uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Icon name="Briefcase" size={13} /> Опыт и образование
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Лет опыта</label>
+                        <input type="number" min={0} max={40} value={form.experience} onChange={e => setForm(f => ({ ...f, experience: +e.target.value }))} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Уровень образования</label>
+                        <select value={form.educationLevel} onChange={e => setForm(f => ({ ...f, educationLevel: e.target.value as CandidateForm["educationLevel"] }))} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-white/20 transition-colors">
+                          <option value="school" className="bg-gray-900">Среднее</option>
+                          <option value="bachelor" className="bg-gray-900">Бакалавр</option>
+                          <option value="master" className="bg-gray-900">Магистр</option>
+                          <option value="phd" className="bg-gray-900">Докторантура</option>
+                        </select>
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-white/40 text-xs mb-1 block">ВУЗ и специальность</label>
+                        <input value={form.education} onChange={e => setForm(f => ({ ...f, education: e.target.value }))} placeholder="Назарбаев Университет, Computer Science" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-white/40 text-xs mb-1 block">Навыки (через запятую)</label>
+                        <input value={form.skills} onChange={e => setForm(f => ({ ...f, skills: e.target.value }))} placeholder="Python, SQL, React, Leadership..." className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-white/40 text-xs mb-1 block">Языки</label>
+                        <input value={form.languages} onChange={e => setForm(f => ({ ...f, languages: e.target.value }))} placeholder="Казахский, Русский, English" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
                     </div>
                   </div>
 
                   {/* Reviews */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <Icon name="MessageSquare" size={14} className="text-neon-purple" />
-                      <span className="text-white/60 text-xs font-medium uppercase tracking-wider">Отзывы работодателей</span>
+                  <div className="glass rounded-2xl p-5">
+                    <div className="text-white/50 text-xs font-medium uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Icon name="MessageSquare" size={13} /> Отзыв работодателя
                     </div>
-                    <div className="space-y-3">
-                      {candidate.reviews.map((review, i) => (
-                        <div key={i} className="glass-bright rounded-xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <div className="text-white text-xs font-semibold">{review.author}</div>
-                              <div className="text-white/40 text-xs">{review.role} · {review.company}</div>
-                            </div>
-                            <div className="flex gap-0.5">
-                              {Array.from({ length: 5 }).map((_, s) => (
-                                <span key={s} className={`text-xs ${s < review.rating ? "text-amber-400" : "text-white/15"}`}>★</span>
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-white/50 text-xs leading-relaxed">"{review.text}"</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="text-white/40 text-xs mb-1 block">Предыдущие компании</label>
+                        <input value={form.previousCompanies} onChange={e => setForm(f => ({ ...f, previousCompanies: e.target.value }))} placeholder="Kaspi.kz, Beeline" className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-white/40 text-xs mb-1 block">Отзыв от работодателя</label>
+                        <textarea value={form.employerReview} onChange={e => setForm(f => ({ ...f, employerReview: e.target.value }))} placeholder="Напишите или вставьте отзыв от предыдущего работодателя..." rows={3} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors resize-none" />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Рейтинг от работодателя</label>
+                        <div className="flex gap-2 pt-1">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <button key={s} onClick={() => setForm(f => ({ ...f, employerRating: s }))} className={`text-xl transition-all ${form.employerRating >= s ? "text-amber-400" : "text-white/15 hover:text-white/30"}`}>★</button>
+                          ))}
                         </div>
-                      ))}
-                      {candidate.reviews.length === 0 && (
-                        <div className="text-white/25 text-xs text-center py-6">Отзывы не добавлены</div>
-                      )}
-                    </div>
-
-                    {/* Action */}
-                    <div className="mt-4 flex gap-2">
-                      <button
-                        className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                        style={{ background: "linear-gradient(135deg, #00e896, #00b4d8)", color: "#0d0f14" }}
-                      >
-                        Пригласить на интервью
-                      </button>
-                      <button className="px-4 py-2.5 rounded-xl text-sm glass text-white/60 hover:text-white transition-colors">
-                        <Icon name="Bookmark" size={16} />
-                      </button>
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Аварии / инциденты</label>
+                        <input type="number" min={0} max={20} value={form.accidents} onChange={e => setForm(f => ({ ...f, accidents: +e.target.value }))} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-white/20 transition-colors" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-20 text-white/25 animate-fade-in">
-            <Icon name="SearchX" size={40} className="mx-auto mb-3 opacity-30" />
-            <div className="text-sm">Кандидаты не найдены</div>
+                  {/* Motivation */}
+                  <div className="glass rounded-2xl p-5">
+                    <div className="text-white/50 text-xs font-medium uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Icon name="Flame" size={13} /> Мотивация и достижения
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Мотивационное письмо *</label>
+                        <textarea value={form.motivation} onChange={e => setForm(f => ({ ...f, motivation: e.target.value }))} placeholder="Почему вы хотите участвовать в программе? Каковы ваши цели? Чем вы можете быть полезны?" rows={4} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors resize-none" />
+                        <div className="text-right text-xs mt-1" style={{ color: form.motivation.split(" ").length >= 50 ? "#00e896" : "#ffffff40" }}>
+                          {form.motivation.split(" ").filter(Boolean).length} слов {form.motivation.split(" ").length >= 50 ? "✓" : "(рекомендуется 50+)"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs mb-1 block">Ключевые достижения</label>
+                        <textarea value={form.achievements} onChange={e => setForm(f => ({ ...f, achievements: e.target.value }))} placeholder="Опишите 2–3 значимых достижения..." rows={3} className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/20 transition-colors resize-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting || !form.name || !form.position || !form.motivation}
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                    style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full" style={{ animation: "spin 0.8s linear infinite" }} />
+                        AI анализирует заявку...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="Zap" size={16} />
+                        Отправить и получить AI-оценку
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* Footer note */}
-        <div className="mt-10 flex items-center gap-2 justify-center text-white/20 text-xs">
-          <Icon name="Zap" size={12} />
-          <span>AI-скоринг носит рекомендательный характер · Окончательное решение принимает комиссия</span>
+        {/* ── TAB: RATING ── */}
+        {tab === "rating" && (
+          <div className="animate-fade-in">
+            <div className="flex items-end justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white mb-1">Рейтинг кандидатов</h1>
+                <p className="text-white/40 text-sm">{candidates.length} заявок · средний балл <span style={{ color: "#00e896" }}>{stats.avg}</span></p>
+              </div>
+              <div className="flex items-center gap-1 glass rounded-xl p-1">
+                {(["score", "experience"] as const).map(s => (
+                  <button key={s} onClick={() => setSortBy(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${sortBy === s ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"}`}>
+                    {s === "score" ? "По баллу" : "По опыту"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {sorted.map((c, i) => (
+                <div
+                  key={c.id}
+                  className="candidate-card glass rounded-2xl p-4 cursor-pointer transition-all hover:border-white/10"
+                  style={{ border: expanded === c.id ? "1px solid rgba(0,232,150,0.25)" : undefined }}
+                  onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 font-mono-custom text-xs text-white/20 text-center shrink-0">#{i + 1}</div>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ background: `${getScoreColor(c.score)}18`, border: `1px solid ${getScoreColor(c.score)}30`, color: getScoreColor(c.score) }}>
+                      {c.avatar}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-white font-semibold text-sm">{c.name}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBg(c.status)}`}>{getStatusLabel(c.status)}</span>
+                        {c.shortlisted && <span className="text-xs" style={{ color: "#00e896" }}>★ Shortlist</span>}
+                      </div>
+                      <div className="text-white/35 text-xs truncate">{c.position} · {c.location} · {c.experience} лет</div>
+                    </div>
+                    <div className="hidden md:flex gap-1.5 flex-wrap max-w-48">
+                      {c.tags.slice(0, 3).map(t => <span key={t} className="px-2 py-0.5 rounded-md text-xs text-white/35 bg-white/5">{t}</span>)}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-xl font-bold font-mono-custom" style={{ color: getScoreColor(c.score) }}>{c.score}</div>
+                      <div className="text-white/25 text-xs">/ 100</div>
+                    </div>
+                    <Icon name={expanded === c.id ? "ChevronUp" : "ChevronDown"} size={15} className="text-white/25 shrink-0" />
+                  </div>
+
+                  {expanded === c.id && (
+                    <div className="mt-4 pt-4 border-t border-white/5 grid md:grid-cols-2 gap-5 animate-fade-in">
+                      <div>
+                        <div className="text-white/40 text-xs uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <Icon name="Brain" size={12} className="text-neon-green" /> AI объяснение
+                        </div>
+                        <p className="text-white/55 text-xs leading-relaxed mb-4 italic">"{c.aiSummary}"</p>
+                        <div className="space-y-2.5">
+                          {c.scoreBreakdown.map(b => (
+                            <div key={b.label}>
+                              <div className="flex justify-between mb-1">
+                                <span className="text-white/45 text-xs">{b.label}</span>
+                                <span className="font-mono-custom text-xs" style={{ color: b.sign === "+" ? "#00e896" : "#f87171" }}>{b.sign}{b.value}/{b.max}</span>
+                              </div>
+                              <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
+                                <div className="h-full rounded-full" style={{ width: `${(b.value / b.max) * 100}%`, background: b.sign === "+" ? "linear-gradient(90deg,#00e896,#00b4d8)" : "linear-gradient(90deg,#f87171,#fb923c)", transition: "width 0.8s ease" }} />
+                              </div>
+                              <div className="text-white/25 text-xs mt-0.5">{b.reason}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-white/40 text-xs uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                          <Icon name="Info" size={12} className="text-neon-purple" /> Детали
+                        </div>
+                        <div className="space-y-2 text-xs">
+                          {[
+                            { label: "Образование", val: c.education },
+                            { label: "Навыки", val: c.skills },
+                            { label: "Компании", val: c.previousCompanies },
+                            { label: "Языки", val: c.languages },
+                            { label: "Дата заявки", val: c.submittedAt },
+                          ].map(row => row.val ? (
+                            <div key={row.label} className="flex gap-2">
+                              <span className="text-white/30 w-24 shrink-0">{row.label}</span>
+                              <span className="text-white/60">{row.val}</span>
+                            </div>
+                          ) : null)}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <button className="flex-1 py-2 rounded-xl text-xs font-semibold" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}>
+                            Пригласить на интервью
+                          </button>
+                          <button className="px-3 py-2 rounded-xl text-xs glass text-white/50 hover:text-white transition-colors">
+                            <Icon name="X" size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB: SHORTLIST ── */}
+        {tab === "shortlist" && (
+          <div className="animate-fade-in">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-white mb-1">Shortlist для комиссии</h1>
+              <p className="text-white/40 text-sm">Топ кандидаты с баллом 75+ · рекомендованы AI к рассмотрению</p>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {[
+                { label: "В шортлисте", value: shortlist.length, color: "#00e896" },
+                { label: "Топ (85+)", value: shortlist.filter(c => c.score >= 85).length, color: "#a855f7" },
+                { label: "Средний балл", value: shortlist.length ? Math.round(shortlist.reduce((s, c) => s + c.score, 0) / shortlist.length) : 0, color: "#38bdf8" },
+              ].map((s, i) => (
+                <div key={i} className="glass rounded-2xl p-4 text-center">
+                  <div className="text-3xl font-bold font-mono-custom mb-1" style={{ color: s.color }}>{s.value}</div>
+                  <div className="text-white/40 text-xs">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              {shortlist.map((c, i) => (
+                <div key={c.id} className="glass rounded-2xl p-5 hover-lift" style={{ border: c.score >= 85 ? "1px solid rgba(0,232,150,0.2)" : undefined }}>
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm font-mono-custom shrink-0" style={{ background: `${getScoreColor(c.score)}20`, color: getScoreColor(c.score) }}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-white font-bold">{c.name}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${getStatusBg(c.status)}`}>{getStatusLabel(c.status)}</span>
+                      </div>
+                      <div className="text-white/40 text-xs mb-2">{c.position} · {c.location} · {c.experience} лет опыта</div>
+                      <p className="text-white/55 text-xs leading-relaxed italic mb-3">"{c.aiSummary}"</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {c.tags.map(t => <span key={t} className="px-2 py-0.5 rounded-md text-xs text-white/40 bg-white/5">{t}</span>)}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-3xl font-bold font-mono-custom" style={{ color: getScoreColor(c.score) }}>{c.score}</div>
+                      <div className="text-white/25 text-xs mb-3">баллов</div>
+                      <button className="px-4 py-2 rounded-xl text-xs font-semibold block" style={{ background: "linear-gradient(135deg,#00e896,#00b4d8)", color: "#0d0f14" }}>
+                        Интервью →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mini score bars */}
+                  <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-5 gap-2">
+                    {c.scoreBreakdown.map(b => (
+                      <div key={b.label} className="text-center">
+                        <div className="text-xs font-mono-custom font-medium mb-1" style={{ color: b.sign === "+" ? "#00e896" : "#f87171" }}>{b.value}</div>
+                        <div className="h-1 rounded-full bg-white/8 mb-1">
+                          <div className="h-full rounded-full" style={{ width: `${(b.value / b.max) * 100}%`, background: b.sign === "+" ? "#00e896" : "#f87171" }} />
+                        </div>
+                        <div className="text-white/25 text-xs truncate">{b.label.split(" ")[0]}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {shortlist.length === 0 && (
+              <div className="text-center py-20 text-white/25">
+                <Icon name="Users" size={40} className="mx-auto mb-3 opacity-30" />
+                <div className="text-sm">Нет кандидатов в шортлисте</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-10 text-center text-white/15 text-xs flex items-center justify-center gap-2">
+          <Icon name="Zap" size={11} />
+          AI-скоринг носит рекомендательный характер · Окончательное решение принимает комиссия
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .bg-white\\/8 { background: rgba(255,255,255,0.08); }
+      `}</style>
     </div>
   );
 }
